@@ -1,12 +1,44 @@
-FROM ghcr.io/stephanlensky/swayvnc-chrome:latest
+FROM debian:sid-slim
 
+ARG USER=appuser
+ARG PUID=1000
+ARG PGID=1000
+ARG RENDER_GROUP_GID=107
+
+ENV DOCKER_USER=$USER
+ENV PUID=$PUID
+ENV PGID=$PGID
+
+USER root
+RUN groupadd -g $PGID $USER
+RUN groupadd -g $RENDER_GROUP_GID docker-render
+RUN useradd -ms /bin/bash -u $PUID -g $PGID $USER
+RUN usermod -aG docker-render $USER
+
+RUN apt-get update
+
+# Install sway/wayvnc + Chromium and dependencies
+RUN apt-get install -y --no-install-recommends \
+    sway wayvnc openssh-client openssl curl ca-certificates chromium chromium-driver chromium-sandbox
+
+# Clean up apt cache
+RUN apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Copy sway/wayvnc configs
+COPY --chown=$USER:$USER sway/config /home/$USER/.config/sway/config
+COPY --chown=$USER:$USER wayvnc/config /home/$USER/.config/wayvnc/config
+
+# Make directory for wayvnc certs
+RUN mkdir /certs
+RUN chown -R $USER:$USER /certs
+
+# enable xwayland
 ARG ENABLE_XWAYLAND
 
 # install xwayland
 RUN if [ "$ENABLE_XWAYLAND" = "true" ]; then \
     apt-get update && \
     apt-get -y install xwayland && \
-    Xwayland -version && \
     echo "Xwayland installed."; \
     else \
     echo "Xwayland installation skipped."; \
@@ -54,22 +86,18 @@ RUN uv python install 3.13
 
 # Install the Python project's dependencies using the lockfile and settings
 COPY --chown=$DOCKER_USER:$DOCKER_USER pyproject.toml uv.lock /app/
-RUN --mount=type=cache,target=/home/$DOCKER_USER/.cache/uv,uid=$PUID,gid=$PGID \
+RUN --mount=type=cache,target=/home/$DOCKER_USER/.cache/uv \
     uv sync --frozen --no-install-project
 
 # Then, add the rest of the project source code and install it
-# Installing separately from its dependencies allows optimal layer caching
 COPY --chown=$DOCKER_USER:$DOCKER_USER . /app
+
+# Sync the project's dependencies and install the project
+RUN --mount=type=cache,target=/home/$DOCKER_USER/.cache/uv \
+    uv sync --frozen
 
 # Add binaries from the project's virtual environment to the PATH
 ENV PATH="/app/.venv/bin:$PATH"
 
-# Sync the project's dependencies and install the project
-RUN --mount=type=cache,target=/home/$DOCKER_USER/.cache/uv,uid=$PUID,gid=$PGID \
-    uv sync --frozen
-
-USER root
-
 # Pass custom command to entrypoint script provided by the base image
-ENTRYPOINT ["/entrypoint.sh"]
 CMD [".venv/bin/python", "-m" ,"app.main"]

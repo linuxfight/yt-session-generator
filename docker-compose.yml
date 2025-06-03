@@ -4,17 +4,20 @@ services:
       context: .
     ports:
       - 5910:5910
+      - 8080:8080
     volumes:
       - swayvnc-wayvnc-certs:/certs
     environment:
       - RENDER_GROUP_GID=107 # replace with GID of the group which owns the /dev/dri/renderD128 device
-      - SWAY_RESOLUTION=1920x1080
+      - SWAY_UNSUPPORTED_GPU=true
+      - SWAY_RESOLUTION=1280x720
       - WAYVNC_PORT=5910
       - WAYVNC_ENABLE_AUTH=true
       - WAYVNC_USERNAME=wayvnc
       - WAYVNC_PASSWORD=wayvnc
-    devices:
-      - /dev/dri
+      - VIRTUAL_GPU=true
+    # devices:
+    #   - /dev/dri
     security_opt:
       - seccomp:unconfined
 

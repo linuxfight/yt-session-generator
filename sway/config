@@ -1,0 +1,8 @@
+output HEADLESS-1 resolution $SWAY_RESOLUTION position 0,0
+xwayland disable
+
+for_window [app_id=".*"] floating enable
+for_window [app_id=".*"] border normal
+for_window [app_id=".*"] resize set 100 ppt 100 ppt
+
+exec wayvnc 0.0.0.0

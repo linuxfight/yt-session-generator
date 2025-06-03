@@ -1,10 +1,13 @@
 [project]
-name = "zendriver-docker-example"
+name = "yt-session-generator"
 version = "0.1.0"
-description = "Example project for using Zendriver with Docker"
+description = "yt-session-generator"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
+    "fastapi>=0.115.12",
+    "uvicorn[standard]>=0.34.3",
+    "uvloop>=0.21.0",
     "zendriver",
 ]
 
