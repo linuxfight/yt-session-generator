@@ -8,3 +8,4 @@ app.egg-info
 htmlcov
 .venv
 .ropeproject
+.DS_Store
