@@ -31,7 +31,7 @@ class PotokenExtractor:
                  browser_path: str = "/usr/bin/chromium") -> None:
         self.update_interval: float = update_interval
         self.browser_path: str = browser_path
-        self.profile_path = mkdtemp()  # cleaned up on exit by nodriver
+        self.profile_path = mkdtemp()
         self._loop = loop
         self._token_info: Optional[TokenInfo] = None
         self._ongoing_update: asyncio.Lock = asyncio.Lock()
@@ -101,17 +101,34 @@ class PotokenExtractor:
             self._extraction_done.clear()
             try:
                 browser = await zd.start(headless=False,
-                                               no_sandbox=True,
+                                               # browser_connection_timeout=5,
+                                               # browser_connection_max_tries=10,
+                                               # no_sandbox=True,
                                                browser_executable_path=self.browser_path,
                                                user_data_dir=self.profile_path,
-                                               browser_args=["--enable-features=UseOzonePlatform",
+                                               browser_args=[
+                                                   "--enable-features=UseOzonePlatform",
                                                    "--ozone-platform=wayland",
                                                    "--disable-dev-shm-usage",
                                                    "--disable-notifications",
                                                    "--disable-popup-blocking",
+                                                   "--disable-session-crashed-bubble",
+                                                   "--disable-features=IsolateOrigins,site-per-process",
+                                                   "--disable-search-engine-choice-screen",
+                                                   "--disable-renderer-backgrounding",
+                                                   "--disable-background-networking",
+                                                   "--disable-backgrounding-occluded-windows",
+                                                   "--disable-component-update",
+                                                   "--disable-breakpad",
+                                                   "--disable-infobars",
+                                                   "--password-store=basic",
+                                                   "--no-pings",
+                                                   "--homepage=about:blank",
+                                                   "--no-service-autorun",
                                                    "--no-first-run",
                                                    "--disable-fre",
-                                                   "--no-default-browser-check"])
+                                                   "--no-default-browser-check"
+                                                ])
             except FileNotFoundError as e:
                 msg = "could not find Chromium. Make sure it's installed or provide direct path to the executable"
                 raise FileNotFoundError(msg) from e

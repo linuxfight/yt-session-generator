@@ -14,10 +14,10 @@ except ImportError:
 
 logger = logging.getLogger("server")
 
-app = FastAPI()
+api = FastAPI()
 
 
-@app.middleware("http")
+@api.middleware("http")
 async def handle_headless_error(request: Request, call_next):
     try:
         return await call_next(request)
@@ -28,12 +28,12 @@ async def handle_headless_error(request: Request, call_next):
         raise
 
 
-@app.get("/")
+@api.get("/")
 async def root():
     return RedirectResponse(url="/token")
 
 
-@app.get("/token")
+@api.get("/token")
 async def get_token(request: Request):
     extractor: PotokenExtractor = request.app.state.potoken_extractor
     token = extractor.get()
@@ -45,7 +45,7 @@ async def get_token(request: Request):
     return JSONResponse(content=token.to_json())
 
 
-@app.get("/update")
+@api.get("/update")
 async def request_update(request: Request):
     extractor: PotokenExtractor = request.app.state.potoken_extractor
     accepted = extractor.request_update()
@@ -56,7 +56,7 @@ async def request_update(request: Request):
     return PlainTextResponse(content=message)
 
 
-@app.exception_handler(404)
+@api.exception_handler(404)
 async def not_found_handler(request: Request, exc: HTTPException):
     return PlainTextResponse("Not Found", status_code=404)
 
@@ -74,11 +74,11 @@ async def main(
         browser_path=browser_path,
     )
 
-    app.state.potoken_extractor = potoken_extractor
+    api.state.potoken_extractor = potoken_extractor
     extractor_task = asyncio.create_task(potoken_extractor.run())
 
     uvicorn_config = uvicorn.Config(
-        app=app,
+        app=api,
         host=bind_address,
         port=port,
         loop="asyncio",
@@ -121,9 +121,6 @@ async def main(
 
 
 if __name__ == "__main__":
-    # Remove deprecated SafeChildWatcher (no longer needed in Python 3.8+)
-    # uvloop handles async child processes properly
-
     if uvloop is not None:
         uvloop.install()
         logger.info("uvloop installed as the event loop policy.")
@@ -131,7 +128,8 @@ if __name__ == "__main__":
     update_interval = 300
     bind_address = "0.0.0.0"
     port = 8080
-    browser_path = "/usr/bin/chromium"
+    # browser_path = "/usr/bin/chromium"
+    browser_path = ""
 
     # Set XDG_RUNTIME_DIR to prevent wlr renderer errors
     import os
