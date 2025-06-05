@@ -1,5 +1,5 @@
 from fastapi import FastAPI, Request, HTTPException
-from fastapi.responses import JSONResponse, PlainTextResponse, RedirectResponse
+from fastapi.responses import Response, PlainTextResponse, RedirectResponse
 import logging
 import uvicorn
 import asyncio
@@ -42,7 +42,10 @@ async def get_token(request: Request):
             content="Token has not yet been generated, try again later.",
             status_code=503,
         )
-    return JSONResponse(content=token.to_json())
+    return Response(
+            content=token.to_json(),
+            media_type="application/json"
+        )
 
 
 @api.get("/update")
